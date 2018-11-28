@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<!-- 機能概要
+テーブルの欄ごとに昇順・降順を入れ替えることができる
+処理概要
+・HTML<th>が押されたらその列の中身を取り出し列の中身を基準にテーブル全体をソートする
+
+・含まれるJavaScriptの機能
+document
+textContent
+appendChild
+removeChild
+toLowerCase
+addEventListener
+className
+sort
+
+・cssの機能
+after
+nth-child(odd) -->
+
+
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Table Sort Sample</title>
+    <link rel = "stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        /* 背景の設定 */
+        body{
+            font-size: 16px;
+            font-family: Verdana, sans-serif;
+        }
+        /* テーブルの設定 */
+        table{
+            width: 540px;
+            margin: 20px auto;
+            /* 全体的に中央ぞろえ */
+            border-collapse: collapse;
+            /* テーブルの隙間を消す */
+        }
+        th,td{
+            width: 180px;
+            box-sizing: border-box;
+            border: 1px solid #e9eae8;
+            padding: 8px 20px;
+        }
+        tbody tr:nth-child(odd){
+            /* 奇数列の背景色を変える（nth-child(odd))で奇数列を指定
+            oddの部分が奇数。偶数ならeven */
+            background: #f8f8f8;
+        }
+        .score{
+            text-align: right;
+            /* スコアに関しては右揃えで表示 */
+        }
+        th{
+            cursor: pointer;
+            /* 見出しに関してはクリックできる状態であることを分かり易くする */
+        }
+        /* クラスがなにもついていないとき */
+        th::after{
+            content:'\f0dc';
+            font-family: FontAwesome;
+            font-size: 12px;
+            color: #ccc;
+            float: right;
+            padding-top: 4px;
+            font-weight: normal;
+        }
+        /* クラスがascのとき */
+        th.asc::after{
+            content:'\f0de';
+            font-family: FontAwesome;
+            color: #000;
+        }
+        /* クラスがdescのとき */
+        th.desc::after{
+            content:'\f0dd';
+            font-family: FontAwesome;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th data-type="string">Name</th>
+                <th data-type="string">Team</th>
+                <th data-type="number">Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>taguchi</td>
+                <td>Orange</td>
+                <td class = "score">32</td>
+            </tr>
+            <tr>
+                <td>fkoji</td>
+                <td>red</td>
+                <td class = "score">84</td>
+            </tr>
+            <tr>
+                <td>akagi</td>
+                <td>orange</td>
+                <td class = "score">2</td>
+            </tr>
+                <tr>
+                <td>Takahashi</td>
+                <td>blue</td>
+                <td class = "score">12</td>
+            </tr>
+            <tr>
+                <td>Miyahashi</td>
+                <td>blue</td>
+                <td class = "score">31</td>
+            </tr>
+            <tr>
+                <td>Tokieda</td>
+                <td>red</td>
+                <td class = "score">25</td>
+            </tr>
+        </tbody>
+    </table>
+<script>
+    (function(){
+        'use strict';
+
+        var ths = document.getElementsByTagName('th');
+        // thの要素を取得
+        var sortorder = 1;
+        //ソートの昇順降順を管理する 1=昇順 -1=降順
+
+        /////////tbodyの中の要素をremoveして、並び替えたものを入力してあげる処理（rebildTbody)//////////////////
+        function rebildTbody(rows){
+            var tbody = document.querySelector('tbody');
+            var i;
+            
+            while(tbody.firstChild){
+                tbody.removeChild(tbody.firstChild);
+            }
+            for(i = 0; i < rows.length; i++){
+                tbody.appendChild(rows[i]);
+            }
+        }
+
+        ///////////昇順・降順をクラスで管理してあげるための処理(updataClassName)////////////////////////////////
+        function updataClassName(th){
+            var k;
+            for(k = 0; k < ths.length; k++){
+                ths[k].className = '';
+            }
+            th.className = sortorder === 1 ? 'asc' : 'desc';    
+        }
+        /////////並び替え処理///////////////////////////////////////////////////////////////////////////////
+        function compare(a ,b ,col ,type){
+            //文字列と数値では昇順降順が異なるため、とってきた値がどちらかをif文で分岐させる
+            var _a = a.children[col].textContent;
+            var _b = b.children[col].textContent;
+            if(type === "number"){ 
+            _a = _a * 1; //textcontentに対して *1をすると数値に型を変更できる
+            _b = _b * 1; 
+            }else if(type === "string"){
+            _a = _a.toLowerCase();//基本的に文字列は大文字が小文字に対して昇順なためすべての文字列を小文字にする。
+            _b = _b.toLowerCase();  
+            }
+            
+            if(_a < _b){
+                return -1;
+            }
+            if(_a > _b){
+                return 1;
+            }
+            return 0;
+        }
+
+        //////////////////////
+        function sortRows(th){
+            //('tbody > tr')で直接の親要素がtbodyである<tr>の要素のリストを取得
+            //この処理によって返ってくる値の型はNodeListになるので配列化してあげる
+            //Array.prototype.slice.callによってArrayのインスタンス化
+            var rows = Array.prototype.slice.call(document.querySelectorAll('tbody > tr'));
+            
+            //cellIndexで（td要素）のインデックス番号。0番目から始まる
+            var col = th.cellIndex;
+            
+            //data-typeを取得 
+            var type = th.dataset.type;
+
+            //並び替えをするfunction呼び出し
+            rows.sort(function(a,b){
+            return compare(a,b,col,type) * sortorder;
+            });
+            
+            return rows;
+        }
+
+
+        // thの要素分だけクリックイベントを設定してあげる処理
+        function setup(){
+            var i;
+            for(i = 0; i< ths.length; i++){
+            ths[i].addEventListener('click',function(){
+            var rows;
+            rows = sortRows(this);
+            rebildTbody(rows);
+            updataClassName(this);
+            sortorder *= -1;
+            //最後にsortorderを入れ替える 
+        });
+        };   
+    }
+    setup();
+    
+    })();
+</script>
+</body>
+</html>
