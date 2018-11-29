@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Typing Game!</title>
+    <style>
+        body{
+            padding-top: 40px;
+            font-family: 'Courier New', sans-serif;
+            text-align: center;
+        }
+        #target{
+            font-size: 48px;
+            letter-spacing: 3px;
+
+        }
+        .info{
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <p id = "target"></p>
+    <p class = "info">
+        Letters count:<span id = "score"></span>,
+        Miss count: <span id = "miss"></span>,
+        Remaning Time:<span id = "timer"></span>
+    </p>
+    <script>
+        (function(){
+            'use strict';
+            var words = [
+                'apple',
+                'imagine',
+                'supply',
+                'fun',
+                'happy',
+                'air',
+                'sky',
+            ]
+            var currentWord;
+            //画面に対して表示される文字
+            var currentLocation;
+            //入力する位置を管理
+            var score;
+            //正解した回数を管理
+            var miss;
+            //失敗した回数を管理
+            var timer;
+            //残り時間を管理
+            var target = document.getElementById('target');
+            var scoreLabel = document.getElementById('score');
+            var missLabel = document.getElementById('miss');
+            var timerLabel = document.getElementById('timer');
+
+            var isstarted;
+            //ゲームの状態を管理
+            var timerId;
+            //setTimeoutを使うため
+
+            //初期設定
+            function init(){
+                currentWord = 'click to start';
+                currentLocation = 0;
+                score = 0;
+                miss = 0;
+                timer = 10;
+                target.innerHTML = currentWord;
+                scoreLabel.innerHTML = score;
+                missLabel.innerHTML = miss;
+                timerLabel.innerHTML = timer;
+                isstarted = false;   
+                
+            }
+            init();
+            
+            //タイピング時間でゲームを終了させるファンクション
+            function updateTimer(){
+                setTimeout(function(){
+                    timer--;
+                    //1秒経つと1減らす
+                    timerLabel.innerHTML = timer;
+                    //timerLabelを書き換える
+                    if(timer <= 0){
+                        //もしtimerが０になったらゲームを終了させる処理
+                        var accuracy = (score + miss) === 0 ? '0.00' : ((score / (score + miss)) * 100).toFixed(2);
+                        alert(score + ' letters, ' + miss + ' miss! ' + accuracy + ' % accuracy');
+                        clearTimeout(timerId);
+                        //setTimeoutを終了させる
+                        init();
+                        //終了させたら初期化させる
+                        return;
+                    }
+                    updateTimer();
+                },1000)
+                //1秒ごと
+            }
+            //currentwordを設定するファンクション
+            function setTarget(){
+                currentWord = words[Math.floor(Math.random() * words.length)];
+                //ランダムで配列の値をcurrentwordに代入する
+                target.innerHTML = currentWord;
+                currentLocation = 0;
+                //文字の位置を初期化してあげる
+            }
+            //クリックイベント（ゲームを開始させるためのファンクション
+            window.addEventListener('click',function(){
+                if(!isstarted){
+                    //isstartedで状態管理　初期値がfalseのためtrueではなかったら…以下の処理が実行される
+                    isstarted = true;
+                    //ゲームの状態をtrueにしてあげる
+                    setTarget();
+                    updateTimer();
+                }
+            });
+            //keyupイベント（入力された値と表示されている値を比べて一致するかしないかを分岐処理）
+            window.addEventListener('keyup',function(e){
+                if(!isstarted){
+                    return;
+                    //falesだったら、このファンクションは実行されない
+                }
+                //e.keyCodeで押下されたキーボードのキーコードを取得できる
+                //取得したキーコードを文字列にしてへんかんするString.fromCharCode()
+                //(String.fromCharCode(e.keyCode))で取得する文字は大文字なのでcurrentWordの大文字と一致するか確認
+                //toUpperCaseでcurrentWordを大文字にしてあげる
+                if(String.fromCharCode(e.keyCode) === currentWord[currentLocation].toUpperCase()){
+                    //一致した場合が以下の処理
+                    score++;
+                    currentLocation++;
+                    scoreLabel.innerHTML = score;
+                    //一致した文字は削除し＿で表示するための処理
+                    var placeholder ='';
+                    for(var i = 0; i < currentLocation; i++){
+                        placeholder += '_';
+                    }
+                    target.innerHTML = placeholder + currentWord.substring(currentLocation);
+                    //一致した文字と残りの文字を結合し、画面に表示させる
+                    if(currentLocation === currentWord.length){
+                        setTarget();
+                        //単語が完了したら再度currentwordを設定するファンクションを呼び出す
+                    }
+                }else{
+                    //不一致だった場合が以下の処理
+                    miss++;
+                    missLabel.innerHTML = miss;
+                }
+
+            });
+
+        })();
+    </script>
+</body>
+</html>
